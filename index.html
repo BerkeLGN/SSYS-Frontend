@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYM APP - Giriş</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { gym: { dark: '#0f0c29', purple: '#302b63' } },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .bg-animated { background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%); }
+        .plate { transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); transform-origin: center; }
+        .shoot-left { transform: translateX(-400px); }
+        .shoot-right { transform: translateX(400px); }
+
+        #morphingBox {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100px; height: 20px; background: #9CA3AF; border-radius: 4px;
+            z-index: 50; opacity: 0; overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+
+        @keyframes expandBox {
+            0% { width: 100px; height: 20px; background: #9CA3AF; border-radius: 4px; }
+            40% { width: 400px; height: 20px; background: #a855f7; border-radius: 10px; }
+            100% { width: 450px; height: 500px; background: rgba(15, 15, 25, 0.95); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        }
+
+        .animate-box { opacity: 1 !important; animation: expandBox 0.8s ease-in-out forwards; }
+        .content-hidden { display: none; opacity: 0; }
+        .content-visible { display: flex; animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { from: { opacity: 0; transform: translateY(10px); } to: { opacity: 1; transform: translateY(0); } }
+        .custom-input { background-color: rgba(30, 30, 40, 0.8) !important; color: white !important; border: 1px solid #4B5563; }
+        .role-card { transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1); }
+        .role-card:hover { transform: translateY(-5px); border-color: #a855f7; background: rgba(168, 85, 247, 0.1); }
+        #notification { position: fixed; top: 20px; right: 20px; z-index: 100; transform: translateX(150%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .show-notif { transform: translateX(0) !important; }
+        .modal-hidden { opacity: 0; visibility: hidden; }
+        .modal-visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+    </style>
+</head>
+<body class="bg-animated min-h-screen flex flex-col items-center justify-center text-white overflow-hidden font-sans relative">
+
+    <div id="notification" class="bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 border border-green-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div><h4 class="font-bold" id="notifTitle">Başarılı!</h4><p class="text-xs text-green-100" id="notifDesc">İşlem tamamlandı.</p></div>
+    </div>
+
+    <div id="mainTitle" class="absolute top-[10%] text-center transition-all duration-700">
+        <h1 class="text-7xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 drop-shadow-2xl">GYM APP</h1>
+        <p class="text-gray-500 text-sm mt-2 tracking-[0.5em] uppercase">HOŞ GELDİNİZ</p>
+    </div>
+
+    <div class="absolute bottom-5 right-5 flex flex-col items-end space-y-2 text-xs">
+        <button type="button" class="text-gray-600 hover:text-white transition-colors" onclick="resetSystem()">🔄 Testi Sıfırla</button>
+    </div>
+
+    <div id="animationArea" class="relative w-[800px] h-[600px] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-300" onclick="startAnimation()">
+        <svg id="svgDumbbell" width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow: visible; z-index: 20;">
+            <rect id="svgBar" x="150" y="140" width="100" height="20" rx="4" fill="#9CA3AF" stroke="#4B5563" stroke-width="2"/>
+            <rect id="p-l-lg" class="plate" x="140" y="115" width="10" height="70" rx="4" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+            <rect id="p-l-md" class="plate" x="128" y="125" width="10" height="50" rx="3" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+            <rect id="p-l-sm" class="plate" x="118" y="132" width="8" height="36" rx="2" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+            <rect id="p-r-lg" class="plate" x="250" y="115" width="10" height="70" rx="4" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+            <rect id="p-r-md" class="plate" x="262" y="125" width="10" height="50" rx="3" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+            <rect id="p-r-sm" class="plate" x="274" y="132" width="8" height="36" rx="2" fill="#374151" stroke="#1F2937" stroke-width="2"/>
+        </svg>
+
+        <div id="morphingBox">
+            
+            <div id="roleSelection" class="content-hidden w-full flex-col items-center p-6 space-y-6">
+                <h2 class="text-2xl font-bold text-white mb-4">Giriş Türünü Seç</h2>
+                <div onclick="showUserLogin()" class="role-card w-full p-5 rounded-xl cursor-pointer flex items-center space-x-4 bg-gray-800/50">
+                    <div class="p-3 bg-purple-600 rounded-full text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
+                    <div><h3 class="font-bold text-xl">Üye Girişi</h3></div>
+                </div>
+                <div onclick="showAdminLogin()" class="role-card w-full p-5 rounded-xl cursor-pointer flex items-center space-x-4 bg-gray-800/50">
+                    <div class="p-3 bg-red-600 rounded-full text-white">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div><h3 class="font-bold text-xl">Yönetici Girişi</h3></div>
+                </div>
+            </div>
+
+            <div id="userLoginScreen" class="content-hidden w-full flex-col p-6 h-full">
+                <div class="flex items-center mb-6">
+                    <button type="button" onclick="backToSelection()" class="text-gray-400 hover:text-white mr-4"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                    <h2 class="text-xl font-bold text-purple-400">Üye Girişi</h2>
+                </div>
+                <form id="u_login_form" onsubmit="handleUserLogin(event)" class="space-y-4 w-full">
+                    <input type="email" name="username" required class="w-full custom-input rounded-xl px-4 py-3 outline-none" placeholder="E-Posta Adresi">
+                    <input type="password" name="password" required class="w-full custom-input rounded-xl px-4 py-3 outline-none" placeholder="Şifre">
+                    <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-bold text-white shadow-lg shadow-purple-500/30">GİRİŞ YAP</button>
+                    <div class="text-center">
+                        <a href="#" onclick="openForgotModal()" class="text-xs text-purple-400 hover:text-purple-300 underline transition-colors">Şifremi Unuttum?</a>
+                    </div>
+                </form>
+                <p class="text-center text-xs text-gray-500 mt-6">Yeni kayıt işlemleri sadece spor salonu danışmasından yapılmaktadır.</p>
+            </div>
+
+            <div id="verifyCodeScreen" class="content-hidden w-full flex-col p-6 h-full text-center">
+                <div class="flex items-center mb-6 text-left">
+                    <h2 class="text-xl font-bold text-yellow-500">Güvenlik Doğrulaması</h2>
+                </div>
+                <p class="text-xs text-gray-400 mb-2">Mailinize gelen 6 haneli kodu giriniz.</p>
+                <div class="mb-4">
+                    <span id="countdownTimer" class="text-lg font-black text-yellow-500">120</span>
+                    <span class="text-xs text-gray-500 ml-1">saniye kaldı</span>
+                </div>
+                <form onsubmit="handleVerifyCode(event)" class="space-y-6 w-full">
+                    <input type="text" id="otpCode" maxlength="6" required class="w-full custom-input rounded-xl px-4 py-4 outline-none text-center text-2xl tracking-[0.5em] font-black border-yellow-500/30" placeholder="000000">
+                    <button type="submit" id="btnVerify" class="w-full py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-bold text-white shadow-lg">KODU DOĞRULA</button>
+                </form>
+                <button type="button" onclick="backToForgotEmail()" class="mt-4 text-xs text-gray-500 hover:text-white underline">E-postayı tekrar gir</button>
+            </div>
+
+            <div id="adminLoginScreen" class="content-hidden w-full flex-col p-6 h-full">
+                <div class="flex items-center mb-6">
+                    <button type="button" onclick="backToSelection()" class="text-gray-400 hover:text-white mr-4"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                    <h2 class="text-xl font-bold text-red-500">Yönetici Girişi</h2>
+                </div>
+                <form onsubmit="handleAdminLogin(event)" class="space-y-4 w-full mt-4">
+                    <input type="text" name="username" required class="w-full custom-input rounded-xl px-4 py-3 outline-none focus:ring-red-500 border-red-500/30" placeholder="Yönetici ID">
+                    <input type="password" name="password" required class="w-full custom-input rounded-xl px-4 py-3 outline-none focus:ring-red-500 border-red-500/30" placeholder="Yönetici Şifresi">
+                    <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white shadow-lg shadow-red-500/30">SİSTEME GİRİŞ</button>
+                </form>
+            </div>
+
+            <div id="resetPasswordScreen" class="content-hidden w-full flex-col p-6 h-full">
+                <div class="flex items-center mb-6">
+                    <h2 class="text-xl font-bold text-blue-400">Yeni Şifre Belirle</h2>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Kod doğrulandı. Lütfen yeni şifrenizi girin.</p>
+                <form onsubmit="handleNewPasswordSet(event)" class="space-y-4 w-full">
+                    <input type="password" id="newPass1" required class="w-full custom-input rounded-xl px-4 py-3 outline-none border-blue-500/30 focus:border-blue-500" placeholder="Yeni Şifre">
+                    <input type="password" id="newPass2" required class="w-full custom-input rounded-xl px-4 py-3 outline-none border-blue-500/30 focus:border-blue-500" placeholder="Yeni Şifre (Tekrar)">
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white shadow-lg shadow-blue-500/30">ŞİFREYİ GÜNCELLE VE GİRİŞ YAP</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/90 z-[60] modal-hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1a1a2e] w-full max-w-sm rounded-2xl border border-purple-500/30 shadow-2xl p-6 relative">
+            <button type="button" onclick="closeForgotModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-400">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Şifremi Unuttum</h3>
+                <p class="text-xs text-gray-400 mt-1">Doğrulama kodu almak için e-postanızı girin.</p>
+            </div>
+            <form onsubmit="handleForgotPassword(event)" class="space-y-4">
+                <input type="email" id="resetEmailInput" required class="w-full custom-input rounded-xl px-4 py-3 outline-none border-purple-500/30 focus:border-purple-500 text-sm" placeholder="E-Posta Adresi">
+                <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl font-bold text-white text-sm shadow-lg">DOĞRULAMA KODU GÖNDER</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let animationTriggered = false;
+        let countdownValue = 120;
+        let countdownTimer = null;
+        let codeExpired = false;
+        let generatedOTP = null;
+
+        // Tarayıcı geri tuşu koruması
+        window.onpopstate = function(event) {
+            if (event.state && event.state.screen) {
+                showScreenOnly(event.state.screen);
+            } else {
+                if (animationTriggered) backToSelection();
+            }
+        };
+
+        function startAnimation() {
+            if (animationTriggered) return; animationTriggered = true;
+            const area = document.getElementById('animationArea');
+            area.style.cursor = 'default'; area.classList.remove('hover:scale-105');
+            document.getElementById('mainTitle').style.transform = 'translateY(-150px)';
+            document.getElementById('mainTitle').style.opacity = '0';
+            document.getElementById('p-l-sm').classList.add('shoot-left'); document.getElementById('p-r-sm').classList.add('shoot-right');
+            setTimeout(() => { document.getElementById('p-l-md').classList.add('shoot-left'); document.getElementById('p-r-md').classList.add('shoot-right'); }, 150);
+            setTimeout(() => { document.getElementById('p-l-lg').classList.add('shoot-left'); document.getElementById('p-r-lg').classList.add('shoot-right'); }, 300);
+            setTimeout(() => { document.getElementById('svgBar').style.display = 'none'; document.getElementById('morphingBox').classList.add('animate-box'); }, 600);
+            setTimeout(() => { 
+                document.getElementById('svgDumbbell').style.display = 'none'; 
+                showScreenOnly('roleSelection');
+            }, 1400);
+        }
+
+        function showScreenOnly(screenId) {
+            const screens = ['roleSelection', 'userLoginScreen', 'adminLoginScreen', 'verifyCodeScreen', 'resetPasswordScreen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('content-hidden');
+                    el.classList.add('content-visible');
+                } else {
+                    el.classList.remove('content-visible');
+                    el.classList.add('content-hidden');
+                }
+            });
+        }
+
+        function switchScreen(oldId, newId) {
+            history.pushState({screen: newId}, "");
+            showScreenOnly(newId);
+        }
+
+        function backToSelection() {
+            history.pushState({screen: 'roleSelection'}, "");
+            showScreenOnly('roleSelection');
+        }
+
+        function showUserLogin() { switchScreen('roleSelection', 'userLoginScreen'); }
+        function showAdminLogin() { switchScreen('roleSelection', 'adminLoginScreen'); }
+        
+        function showNotification(title, desc, colorClass = 'bg-green-600', borderClass = 'border-green-400') {
+            const notif = document.getElementById('notification');
+            document.getElementById('notifTitle').innerText = title; 
+            document.getElementById('notifDesc').innerText = desc;
+            notif.className = `fixed top-[20px] right-[20px] z-[100] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 border ${colorClass} ${borderClass}`;
+            notif.classList.add('show-notif');
+            setTimeout(() => { notif.classList.remove('show-notif'); }, 7000); 
+        }
+        
+        function resetSystem() {
+            if(confirm("Test verilerini sıfırlamak istiyor musun?")) { localStorage.clear(); alert("Sistem sıfırlandı."); location.reload(); }
+        }
+
+        function openForgotModal() { document.getElementById('forgotPasswordModal').classList.remove('modal-hidden'); document.getElementById('forgotPasswordModal').classList.add('modal-visible'); }
+        function closeForgotModal() { document.getElementById('forgotPasswordModal').classList.remove('modal-visible'); document.getElementById('forgotPasswordModal').classList.add('modal-hidden'); }
+        
+        function handleForgotPassword(event) {
+            event.preventDefault();
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            closeForgotModal();
+            showNotification("E-Posta Gönderildi", `Kodunuz: ${generatedOTP}`, "bg-blue-600", "border-blue-400");
+            switchScreen('userLoginScreen', 'verifyCodeScreen');
+            startCountdown();
+        }
+
+        function startCountdown() {
+            countdownValue = 120;
+            codeExpired = false;
+            document.getElementById('countdownTimer').innerText = countdownValue;
+            document.getElementById('btnVerify').disabled = false;
+            document.getElementById('btnVerify').classList.remove('opacity-50', 'grayscale');
+            if(countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => {
+                countdownValue--;
+                document.getElementById('countdownTimer').innerText = countdownValue;
+                if (countdownValue <= 0) {
+                    clearInterval(countdownTimer);
+                    codeExpired = true;
+                    document.getElementById('btnVerify').disabled = true;
+                    document.getElementById('btnVerify').classList.add('opacity-50', 'grayscale');
+                    showNotification("Süre Doldu!", "Kodun süresi bitti. Tekrar isteyin.", "bg-red-600", "border-red-400");
+                }
+            }, 1000);
+        }
+
+        function backToForgotEmail() {
+            if(countdownTimer) clearInterval(countdownTimer);
+            document.getElementById('otpCode').value = ''; 
+            backToSelection();
+            openForgotModal();
+        }
+
+        function handleVerifyCode(event) {
+            event.preventDefault();
+            if (codeExpired) {
+                showNotification("Hata!", "Kodun süresi dolmuş. Tekrar mail gönderin.", "bg-red-600", "border-red-400");
+                return;
+            }
+            const inputCode = document.getElementById('otpCode').value;
+            if (inputCode !== generatedOTP) {
+                showNotification("Hatalı Kod!", "Lütfen size iletilen kodu doğru giriniz.", "bg-red-600", "border-red-400");
+                return;
+            }
+            if(countdownTimer) clearInterval(countdownTimer);
+            showNotification("Kod Doğrulandı", "Yeni şifrenizi oluşturabilirsiniz.", "bg-yellow-600", "border-yellow-400");
+            switchScreen('verifyCodeScreen', 'resetPasswordScreen');
+        }
+
+        function handleNewPasswordSet(event) {
+            event.preventDefault();
+            const p1 = document.getElementById('newPass1').value;
+            const p2 = document.getElementById('newPass2').value;
+            if(p1 !== p2) {
+                showNotification("Hata", "Şifreler eşleşmiyor.", "bg-red-600", "border-red-400");
+                return;
+            }
+            localStorage.setItem('gymUserPassword', p1);
+            showNotification("Başarılı", "Şifreniz güncellendi. Giriş yapabilirsiniz.", "bg-green-600", "border-green-400");
+            setTimeout(() => {
+                backToSelection();
+                showUserLogin();
+            }, 1500);
+        }
+
+        function handleUserLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const passwordValue = form.querySelector('input[name="password"]').value;
+            const savedPassword = localStorage.getItem('gymUserPassword');
+            const validPassword = savedPassword ? savedPassword : "1234";
+
+            if (passwordValue !== validPassword) {
+                showNotification("Hatalı Şifre!", "Lütfen bilgilerinizi kontrol edin.", "bg-red-600", "border-red-400");
+                return; 
+            }
+            if (passwordValue === "1234") { localStorage.setItem('firstLogin', 'true'); }
+            localStorage.setItem('gymUserName', 'BERKE OLGUN');
+            showNotification("Giriş Başarılı!", "Yönlendiriliyorsunuz...", "bg-purple-600", "border-purple-400");
+            
+            // --- FIX: DOSYA ADI USER_PANEL.HTML YAPILDI ---
+            setTimeout(() => { window.location.href = "user_panel.html"; }, 1000);
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const inputID = form.querySelector('input[name="username"]').value.trim();
+            if (inputID === '1001') { localStorage.setItem('currentAdmin', 'Berke Olgun'); } 
+            else if (inputID === '1002') { localStorage.setItem('currentAdmin', 'Yusuf Kerem Can'); } 
+            else { localStorage.setItem('currentAdmin', 'Yönetici'); }
+            showNotification("Admin Girişi", `Hoş geldiniz, ${localStorage.getItem('currentAdmin')}`, "bg-red-600", "border-red-400");
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
+        }
+    </script>
+</body>
+</html>

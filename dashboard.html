@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYM APP - Yönetici Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { gym: { bg: '#050510', card: 'rgba(20, 20, 30, 0.8)', fireStart: '#ff3d3d', fireEnd: '#f59e0b' } },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    animation: { 'fade-in': 'fadeIn 0.6s ease-out forwards', 'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' },
+                    keyframes: {
+                        fadeIn: { from: { opacity: '0', transform: 'scale(0.95)' }, to: { opacity: '1', transform: 'scale(1)' } },
+                        slideUp: { from: { transform: 'translateY(40px)', opacity: '0' }, to: { transform: 'translateY(0)', opacity: '1' } }
+                    },
+                    boxShadow: { 'neon': '0 0 20px rgba(255, 61, 61, 0.5), 0 0 40px rgba(255, 61, 61, 0.2)' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background: radial-gradient(circle at top center, #1a1a2e 0%, #050510 80%); color: white; }
+        .glass-card { background: var(--gym-card); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .glass-card:hover { transform: translateY(-8px) scale(1.02); border-color: #ff3d3d; box-shadow: 0 15px 40px rgba(220, 38, 38, 0.25); }
+        .progress-bar-fire { background: linear-gradient(90deg, #ff3d3d, #f59e0b); box-shadow: 0 0 15px #ff3d3d; }
+        .modal-wrapper { transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-hidden { opacity: 0; visibility: hidden; }
+        .modal-visible { opacity: 1; visibility: visible; }
+        .table-header { background: rgba(255, 61, 61, 0.1); color: #ff3d3d; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+        .table-row { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+        .table-row:hover { background: rgba(255,255,255,0.02); }
+        .custom-input { background-color: rgba(0, 0, 0, 0.3) !important; color: white !important; border: 1px solid #374151; }
+        #notification { transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 300; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans overflow-x-hidden p-6 md:p-12">
+
+    <div id="notification" class="fixed top-5 right-5 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 border border-green-400 translate-x-[150%]">
+        <svg id="notifIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div><h4 id="notifTitle" class="font-bold">İşlem Başarılı</h4><p id="notifDesc" class="text-xs text-green-100">Bilgileriniz güncellendi.</p></div>
+    </div>
+
+    <header class="flex justify-between items-center mb-12 animate-fade-in max-w-7xl mx-auto w-full">
+        <div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 drop-shadow-xl">GYM ADMIN</h1>
+            <p class="text-red-400 font-semibold tracking-widest uppercase text-sm mt-1">Yönetim Merkezi</p>
+        </div>
+        <div class="flex items-center space-x-5">
+            <div class="text-right hidden md:block">
+                <p id="adminNameDisplay" class="text-base font-extrabold text-white uppercase">Yükleniyor...</p>
+                <p class="text-xs text-red-500 font-bold tracking-wider">YÖNETİCİ</p>
+            </div>
+            <div class="h-14 w-14 rounded-full bg-gradient-to-tr from-red-600 to-yellow-500 p-[3px] shadow-neon"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AdminBoxer" class="h-full w-full rounded-full bg-gray-900"></div>
+            <a href="index.html" class="bg-red-600/20 p-4 rounded-full hover:bg-red-600 text-red-500 hover:text-white transition-all duration-300 hover:shadow-neon group">
+                <svg class="w-6 h-6 group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </a>
+        </div>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up max-w-7xl mx-auto w-full">
+        <div onclick="openModal('membersModal')" class="glass-card h-80 p-10 cursor-pointer group flex flex-col justify-between border-blue-500/20 hover:border-blue-500 relative overflow-hidden">
+            <div class="absolute -right-12 -bottom-12 text-blue-900/20 group-hover:text-blue-800/30 transition-colors duration-500 transform rotate-12 group-hover:rotate-0">
+                <svg class="w-64 h-64" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            </div>
+            <div class="flex justify-between items-start z-10">
+                <div class="p-5 bg-blue-600/20 text-blue-500 rounded-3xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-xl group-hover:shadow-blue-500/50">
+                    <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                </div>
+                <div class="bg-blue-500/10 p-2 rounded-full"><svg class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
+            </div>
+            <div class="z-10">
+                <span class="text-7xl font-black text-white tracking-tighter drop-shadow-2xl" id="totalMembersCount">4</span>
+                <h3 class="text-3xl font-extrabold text-white mt-2 group-hover:text-blue-400 transition-colors uppercase tracking-wide">Üyeler</h3>
+            </div>
+        </div>
+
+        <div onclick="openModal('requestsModal')" class="glass-card h-80 p-10 cursor-pointer group flex flex-col justify-between border-red-500/40 hover:border-red-500 relative overflow-hidden">
+            <div class="absolute inset-0 bg-red-600/5 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity z-0"></div>
+            <div class="absolute -right-12 -bottom-12 text-red-900/20 group-hover:text-red-800/30 transition-colors duration-500 transform rotate-12 group-hover:rotate-0">
+                <svg class="w-64 h-64" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <div class="flex justify-between items-start z-10 relative">
+                <div class="p-5 bg-red-600/20 text-red-500 rounded-3xl group-hover:bg-red-600 group-hover:text-white transition-all duration-300 shadow-xl group-hover:shadow-red-500/50 relative">
+                    <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span id="pingDot" class="absolute -top-2 -right-2 w-6 h-6 bg-red-100 rounded-full animate-ping opacity-75"></span>
+                    <span id="staticDot" class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 rounded-full border-4 border-[#050510]"></span>
+                </div>
+                <div class="bg-blue-500/10 p-2 rounded-full"><svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
+            </div>
+            <div class="relative z-10">
+                <span id="pendingCount" class="text-7xl font-black text-red-500 tracking-tighter drop-shadow-2xl">2</span>
+                <h3 class="text-3xl font-extrabold text-white mt-2 group-hover:text-red-400 transition-colors uppercase tracking-wide">Onay Merkezi</h3>
+            </div>
+        </div>
+
+        <div onclick="openModal('financeModal')" class="glass-card h-80 p-10 cursor-pointer group flex flex-col justify-between border-green-500/20 hover:border-green-500 relative overflow-hidden">
+            <div class="absolute -right-12 -bottom-12 text-green-900/20 group-hover:text-green-800/30 transition-colors duration-500 transform rotate-12 group-hover:rotate-0">
+                <svg class="w-64 h-64" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/><path d="M5 19h14v2H5z"/></svg>
+            </div>
+            <div class="flex justify-between items-start z-10">
+                <div class="p-5 bg-green-600/20 text-green-500 rounded-3xl group-hover:bg-green-600 group-hover:text-white transition-all duration-300 shadow-xl group-hover:shadow-green-500/50">
+                    <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="bg-green-500/10 p-2 rounded-full"><svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
+            </div>
+            <div class="z-10">
+                <span class="text-6xl font-black text-white tracking-tighter drop-shadow-2xl" id="financeCardTotal">₺0</span>
+                <h3 class="text-3xl font-extrabold text-white mt-2 group-hover:text-green-400 transition-colors uppercase tracking-wide">Finans</h3>
+            </div>
+        </div>
+
+        <div onclick="openModal('coachesModal')" class="glass-card h-80 p-10 cursor-pointer group flex flex-col justify-between border-purple-500/20 hover:border-purple-500 relative overflow-hidden">
+            <div class="absolute -right-12 -bottom-12 text-purple-900/20 group-hover:text-purple-800/30 transition-colors duration-500 transform rotate-12 group-hover:rotate-0">
+                <svg class="w-64 h-64" viewBox="0 0 24 24" fill="currentColor"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43zM5.57 18.43L4.14 19.86 2.71 18.43l1.43-1.43L2 15.57 3.43 14.14 7 17.71l-1.43 1.43z"/></svg>
+            </div>
+            <div class="flex justify-between items-start z-10">
+                <div class="p-5 bg-purple-600/20 text-purple-500 rounded-3xl group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-xl group-hover:shadow-purple-500/50">
+                    <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </div>
+                <div class="bg-purple-500/10 p-2 rounded-full"><svg class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
+            </div>
+            <div class="z-10">
+                <span class="text-7xl font-black text-white tracking-tighter drop-shadow-2xl" id="totalCoachesCount">4</span>
+                <h3 class="text-3xl font-extrabold text-white mt-2 group-hover:text-purple-400 transition-colors uppercase tracking-wide">Antrenörler</h3>
+            </div>
+        </div>
+    </section>
+
+    <div id="membersModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 modal-hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-7xl h-[90vh] border-blue-500/30 shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col overflow-hidden">
+            <div class="p-8 border-b border-blue-500/20 flex justify-between items-center bg-blue-900/20">
+                <h2 class="text-3xl font-black text-white uppercase tracking-wider flex items-center"><svg class="w-8 h-8 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Üye Yönetimi</h2>
+                <div class="flex items-center space-x-4">
+                    <button onclick="openAddMemberModal()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center transition-transform hover:scale-105"><svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>YENİ ÜYE EKLE</button>
+                    <button onclick="closeModal('membersModal')" class="bg-black/50 p-3 rounded-full hover:bg-red-600 text-white transition-all hover:rotate-90"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                </div>
+            </div>
+            <div class="p-8 overflow-y-auto flex-1">
+                <div class="overflow-x-auto rounded-xl border border-gray-700">
+                    <table class="w-full text-left">
+                        <thead><tr class="table-header"><th class="p-4">Adı</th><th class="p-4">Soyadı</th><th class="p-4">E-Posta</th><th class="p-4">Paket Bilgisi</th><th class="p-4 text-center">İşlemler</th></tr></thead>
+                        <tbody id="membersTableBody" class="text-sm text-gray-300"></tbody>
+                    </table>
+                </div>
+                <div id="emptyMessage" class="hidden text-center mt-10 text-gray-500">Henüz kayıtlı üye yok.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="financeModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 modal-hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-6xl h-[90vh] border-green-500/30 shadow-[0_0_50px_rgba(34,197,94,0.2)] flex flex-col overflow-hidden">
+            <div class="p-8 border-b border-green-500/20 flex justify-between items-center bg-green-900/20"><h2 class="text-3xl font-black text-white uppercase tracking-wider flex items-center"><svg class="w-8 h-8 mr-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Finans Raporu</h2><button onclick="closeModal('financeModal')" class="bg-black/50 p-3 rounded-full hover:bg-red-600 text-white transition-all hover:rotate-90"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <div class="p-8 overflow-y-auto flex-1">
+                <div class="grid grid-cols-1 gap-6 mb-8">
+                    <div class="bg-gradient-to-r from-gray-800/40 to-gray-700/20 p-6 rounded-2xl border border-gray-600/30 flex items-center justify-between"><div><p class="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Toplam Ciro</p><h3 id="totalRevenueDisplay" class="text-3xl font-bold text-white">₺0</h3></div><div class="p-3 bg-gray-600/20 rounded-full text-gray-400"><svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div></div>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-gray-700"><table class="w-full text-left"><thead><tr class="table-header"><th class="p-4">Üye Adı</th><th class="p-4">Tarih</th><th class="p-4">Paket</th><th class="p-4">Ödeme Türü</th><th class="p-4 text-right">Tutar</th></tr></thead><tbody id="financeTableBody" class="text-sm text-gray-300"></tbody></table></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="requestsModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 modal-hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-4xl h-[80vh] border-red-500/40 shadow-[0_0_50px_rgba(220,38,38,0.3)] flex flex-col overflow-hidden">
+            <div class="p-8 border-b border-red-500/20 flex justify-between items-center bg-red-900/20">
+                <h2 class="text-3xl font-black text-white uppercase tracking-wider flex items-center"><svg class="w-8 h-8 mr-3 text-red-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Onay Bekleyenler</h2>
+                <button onclick="closeModal('requestsModal')" class="bg-black/50 p-3 rounded-full hover:bg-red-600 text-white transition-all hover:rotate-90"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div id="requestsContainer" class="p-10 overflow-y-auto flex-1 space-y-4"></div>
+            <div id="noRequestsMessage" class="hidden text-center mt-20 text-gray-500 text-lg">Bekleyen talep bulunmamaktadır.</div>
+        </div>
+    </div>
+
+    <div id="coachesModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 modal-hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-7xl h-[90vh] border-purple-500/30 shadow-[0_0_50px_rgba(168,85,247,0.2)] flex flex-col overflow-hidden">
+            <div class="p-8 border-b border-purple-500/20 flex justify-between items-center bg-purple-900/20">
+                <h2 class="text-3xl font-black text-white uppercase tracking-wider flex items-center"><svg class="w-8 h-8 mr-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>Antrenör Kadrosu</h2>
+                <div class="flex items-center space-x-4">
+                    <button onclick="openAddCoachModal()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center transition-transform hover:scale-105"><svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>ANTRENÖR EKLE / GÜNCELLE</button>
+                    <button onclick="closeModal('coachesModal')" class="bg-black/50 p-3 rounded-full hover:bg-red-600 text-white transition-all hover:rotate-90"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                </div>
+            </div>
+            <div class="p-8 overflow-y-auto flex-1">
+                <div class="overflow-x-auto rounded-xl border border-gray-700">
+                    <table class="w-full text-left">
+                        <thead><tr class="table-header"><th class="p-4">Ad</th><th class="p-4">Soyad</th><th class="p-4">İletişim (E-posta)</th><th class="p-4 text-center">Detaylar</th><th class="p-4 text-center">İşlemler</th></tr></thead>
+                        <tbody id="coachesTableBody" class="text-sm text-gray-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addMemberModal" class="fixed inset-0 bg-black/90 z-[100] modal-hidden flex items-center justify-center p-4">
+        <div class="bg-[#1a1a2e] w-full max-w-lg rounded-2xl border border-green-500/50 shadow-2xl p-8">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-white">Yeni Üye Kaydı</h3><button onclick="closeAddMemberModal()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <form onsubmit="saveNewMember(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4"><input type="text" id="newMemberName" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="Ad"><input type="text" id="newMemberSurname" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="Soyad"></div>
+                <input type="email" id="newMemberEmail" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="E-Posta Adresi">
+                <div class="grid grid-cols-2 gap-4"><select id="newMemberPackage" class="custom-input w-full rounded-lg px-4 py-3 outline-none cursor-pointer"><option value="Silver">Silver Paket</option><option value="Gold">Gold Paket</option><option value="VIP">VIP Paket</option></select><select id="newMemberDuration" class="custom-input w-full rounded-lg px-4 py-3 outline-none cursor-pointer"><option value="3">3 Ay</option><option value="6">6 Ay</option><option value="9">9 Ay</option><option value="12">12 Ay</option></select></div>
+                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-xl font-bold text-white shadow-lg mt-4">KAYDI TAMAMLA</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addCoachModal" class="fixed inset-0 bg-black/90 z-[100] modal-hidden flex items-center justify-center p-4">
+        <div class="bg-[#1a1a2e] w-full max-w-lg rounded-2xl border border-purple-500/50 shadow-2xl p-8">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-white">Yeni Antrenör Kaydı</h3><button onclick="closeAddCoachModal()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <form onsubmit="saveNewCoach(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4"><input type="text" id="newCoachName" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="Ad"><input type="text" id="newCoachSurname" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="Soyad"></div>
+                <input type="email" id="newCoachEmail" required class="custom-input w-full rounded-lg px-4 py-3 outline-none" placeholder="E-Posta Adresi">
+                <textarea id="newCoachBio" required class="custom-input w-full rounded-lg px-4 py-3 outline-none h-24 resize-none" placeholder="Biyografi"></textarea>
+                <textarea id="newCoachAchieve" required class="custom-input w-full rounded-lg px-4 py-3 outline-none h-24 resize-none" placeholder="Başarılar (Her satıra bir tane)"></textarea>
+                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-xl font-bold text-white shadow-lg mt-4">KAYDI TAMAMLA</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="coachProfileModal" class="fixed inset-0 bg-black/90 z-[130] modal-hidden flex items-center justify-center p-4">
+        <div class="bg-[#1a1a2e] w-full max-w-3xl rounded-3xl border border-yellow-500/30 shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[80vh]">
+            <div class="w-full md:w-2/5 relative bg-gray-900 flex items-center justify-center">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=GymCoach" id="coachProfileImage" alt="Coach" class="w-full h-full object-cover opacity-80">
+                <div class="absolute bottom-4 left-4"><h3 id="coachProfileName" class="text-2xl font-bold text-white">...</h3><p class="text-yellow-400 font-bold text-sm">Profesyonel Antrenör</p></div>
+            </div>
+            <div class="w-full md:w-3/5 p-8 overflow-y-auto">
+                <div class="flex justify-between items-start mb-6"><h2 class="text-xl font-bold text-white border-b-2 border-yellow-500 pb-1">Biyografi</h2><button onclick="closeCoachProfileModal()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+                <p id="coachProfileBio" class="text-gray-300 text-sm leading-relaxed mb-6">...</p>
+                <div class="space-y-4">
+                    <h4 class="font-bold text-white flex items-center text-lg"><svg class="w-5 h-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 011.827.954L17.18 7.519l2.543 1.018a1 1 0 01.198 1.832l-2.543 1.019 1.3 3.843a1 1 0 01-1.827.954L12.862 13H11v1a1 1 0 11-2 0v-1H7.138l-3.892 3.185a1 1 0 01-1.827-.954l1.3-3.843-2.542-1.019a1 1 0 01.198-1.832l2.543-1.018L1.3 3.696a1 1 0 011.827-.954L4.82 5.323V4a1 1 0 011-1h2.18z" clip-rule="evenodd" /></svg>Başarılar</h4>
+                    <div id="coachProfileAchievements" class="bg-gradient-to-r from-yellow-500/10 to-transparent p-4 rounded-xl border border-yellow-500/20 space-y-2 text-sm text-gray-300"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/90 z-[110] modal-hidden flex items-center justify-center p-4">
+        <div class="bg-[#1a1a2e] w-full max-w-sm rounded-2xl border border-red-500/50 shadow-2xl p-6 text-center">
+            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500"><svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+            <h3 class="text-xl font-bold text-white mb-2">Emin misiniz?</h3><p class="text-gray-400 text-sm mb-6">Bu kayıt sistemden kalıcı olarak silinecek.</p>
+            <div class="flex space-x-3"><button onclick="closeDeleteModal()" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold">Vazgeç</button><button onclick="performDelete()" class="flex-1 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold">Evet, Sil</button></div>
+        </div>
+    </div>
+
+    <div id="measurementModal" class="fixed inset-0 bg-black/90 z-[120] modal-hidden flex items-center justify-center p-4">
+        <div class="bg-[#1a1a2e] w-full max-w-2xl rounded-2xl border border-blue-500/50 shadow-2xl p-8">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-white">Ölçüm Güncelle: <span id="measureMemberName" class="text-blue-400">...</span></h3><button onclick="closeMeasurementModal()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <form onsubmit="saveMeasurements(event)" class="space-y-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><label class="text-xs text-gray-400 ml-1">Boy (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="180"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Kilo (kg)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="80"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Göğüs (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="100"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Bel (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="85"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Kol (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="40"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Bacak (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="60"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Kalça (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="95"></div>
+                    <div><label class="text-xs text-gray-400 ml-1">Ön Kol (cm)</label><input type="number" class="custom-input w-full rounded-lg px-3 py-2 outline-none" placeholder="32"></div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white shadow-lg mt-4">ÖLÇÜMLERİ KAYDET</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- VERİLER ---
+        let members = [
+            { id: 1, name: "Ali", surname: "Yılmaz", email: "ali@gmail.com", package: "Gold", duration: "12" },
+            { id: 2, name: "Ayşe", surname: "Demir", email: "ayse@hotmail.com", package: "Silver", duration: "3" },
+            { id: 3, name: "Mehmet", surname: "Kaya", email: "mehmet@yahoo.com", package: "VIP", duration: "6" },
+            { id: 4, name: "Zeynep", surname: "Çelik", email: "zeynep@gmail.com", package: "Gold", duration: "9" }
+        ];
+        
+        let requests = [
+            { id: 101, memberId: 1, name: "Ali Yılmaz", current: "Gold", target: "VIP" },
+            { id: 102, memberId: 4, name: "Zeynep Çelik", current: "Gold", target: "VIP" }
+        ];
+
+        // STATIK VERILER TAM İSTEDİĞİN GİBİ DÜZENLENDİ (Sadece Kredi Kartı)
+        const staticFinance = [
+            { name: "Berke Olgun", date: "19.12.2025", package: "GOLD ÜYELİK", method: "Kredi Kartı", amount: 2000 },
+            { name: "Ali Yılmaz", date: "16.12.2025", package: "GOLD ÜYELİK", method: "Kredi Kartı", amount: 2000 },
+            { name: "Ayşe Demir", date: "15.12.2025", package: "SILVER ÜYELİK", method: "Kredi Kartı", amount: 2000 }
+        ];
+
+        let coaches = [
+            { id: 1, name: "Ronnie", surname: "Coleman", email: "ronnie@lightweight.com", bio: "8 kez Mr.Olympia şampiyonu olan Ronnie, tarihin en güçlü ve dominant vücut geliştirmecilerinden biri olarak kabul edilir.", achievements: "8x Olympia" },
+            { id: 2, name: "Arnold", surname: "Schwarzenegger", email: "arnold@terminate.com", bio: "7 kez Mr.Olympia kazanan Arnold, vücut geliştirmeyi küresel bir fenomene dönüştüren ve sporu ana akıma taşıyan efsane isimdir.", achievements: "7x Olympia" },
+            { id: 3, name: "Chris", surname: "Bumstead", email: "cbum@classic.com", bio: "Klasik fizik kategorisinde birden fazla Mr.Olympia şampiyonluğu bulunan Chris, modern klasik estetiğin en güçlü temsilcisidir. ", achievements: "6x Olympia" },
+            { id: 4, name: "Mike", surname: "Mentzer", email: "mike@heavy.com", bio: "Heavy Duty antrenman sistemiyle tanınan Mike, yüksek yoğunluklu antrenman felsefesiyle vücut geliştirme anlayışına yön veren öncü bir atlettir.", achievements: "1x Olympia" }
+        ];
+
+        let deleteTargetType = null;
+        let deleteTargetId = null;
+        let measureTargetId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const adminName = localStorage.getItem('currentAdmin') || 'Yönetici';
+            document.getElementById('adminNameDisplay').innerText = adminName;
+            updateDashboardCounts(); 
+            renderMembers();
+            renderRequests();
+            renderFinance();
+            renderCoaches();
+        });
+
+        function updateDashboardCounts() {
+            document.getElementById('totalMembersCount').innerText = members.length;
+            document.getElementById('totalCoachesCount').innerText = coaches.length;
+            document.getElementById('pendingCount').innerText = requests.length;
+            const pingDot = document.getElementById('pingDot');
+            const staticDot = document.getElementById('staticDot');
+            if(requests.length === 0) { pingDot.classList.add('hidden'); staticDot.classList.add('hidden'); } else { pingDot.classList.remove('hidden'); staticDot.classList.remove('hidden'); }
+        }
+
+        // --- RENDER FONKSİYONLARI ---
+        function renderMembers() {
+            const tbody = document.getElementById('membersTableBody'); tbody.innerHTML = '';
+            if (members.length === 0) { document.getElementById('emptyMessage').classList.remove('hidden'); } else {
+                document.getElementById('emptyMessage').classList.add('hidden');
+                members.forEach(m => {
+                    tbody.innerHTML += `<tr class="table-row"><td class="p-4 font-bold text-white">${m.name}</td><td class="p-4 font-bold text-white">${m.surname}</td><td class="p-4 text-gray-400">${m.email}</td><td class="p-4"><span class="bg-gray-800 text-white px-3 py-1 rounded text-xs border border-gray-600">${m.package} - ${m.duration} Ay</span></td><td class="p-4 text-center flex justify-center space-x-2"><button onclick="openMeasurementModal(${m.id}, '${m.name} ${m.surname}')" class="text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-500/10"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg></button><button onclick="askDelete('member', ${m.id})" class="text-red-500 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-red-500/10"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td></tr>`;
+                });
+            } updateDashboardCounts();
+        }
+
+        function renderCoaches() {
+            const tbody = document.getElementById('coachesTableBody'); tbody.innerHTML = '';
+            coaches.forEach(c => {
+                tbody.innerHTML += `<tr class="table-row"><td class="p-4 font-bold text-white">${c.name}</td><td class="p-4 font-bold text-white">${c.surname}</td><td class="p-4 text-gray-400">${c.email}</td><td class="p-4 text-center"><button onclick="viewCoachProfile(${c.id})" class="text-blue-400 hover:text-white border border-blue-500/50 hover:bg-blue-600 px-3 py-1 rounded text-xs transition-colors">Profili İncele</button></td><td class="p-4 text-center"><button onclick="askDelete('coach', ${c.id})" class="text-red-500 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-red-500/10"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td></tr>`;
+            }); updateDashboardCounts();
+        }
+
+        function renderFinance() {
+            const tbody = document.getElementById('financeTableBody'); tbody.innerHTML = ''; let total = 0;
+            const userPayments = JSON.parse(localStorage.getItem('gymPayments')) || [];
+            
+            // FILTRELEME VE FORMATLAMA: "aralık" içerenleri atıyor, Title Case uyguluyor ve Nakitleri de Kredi Kartına çeviriyor (garanti için)
+            const allTransactions = [...staticFinance, ...userPayments]
+                .filter(item => !item.package.toLowerCase().includes('aralık'))
+                .map(item => {
+                    const formattedName = item.name.split(' ').map(part => 
+                        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+                    ).join(' ');
+
+                    let pkg = item.package.toUpperCase();
+                    pkg = pkg.replace('İ', 'I').replace('ÜYELIK', 'ÜYELİK');
+
+                    return { ...item, name: formattedName, package: pkg, method: "Kredi Kartı" };
+                });
+
+            allTransactions.forEach(item => { 
+                total += item.amount; 
+                tbody.innerHTML += `<tr class="table-row"><td class="p-4 font-bold text-white">${item.name}</td><td class="p-4 text-gray-400 text-xs">${item.date}</td><td class="p-4"><span class="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs">${item.package}</span></td><td class="p-4 text-sm text-gray-400">${item.method}</td><td class="p-4 text-right font-bold text-green-400">₺${item.amount.toLocaleString('tr-TR')}</td></tr>`; 
+            });
+            
+            document.getElementById('totalRevenueDisplay').innerText = `₺${total.toLocaleString('tr-TR')}`; 
+            document.getElementById('financeCardTotal').innerText = `₺${(total/1000).toFixed(1)}K`;
+        }
+
+        function renderRequests() {
+            const container = document.getElementById('requestsContainer'); container.innerHTML = '';
+            if (requests.length === 0) { document.getElementById('noRequestsMessage').classList.remove('hidden'); } else {
+                document.getElementById('noRequestsMessage').classList.add('hidden');
+                requests.forEach(req => { container.innerHTML += `<div class="bg-white/5 rounded-xl p-4 flex justify-between items-center border border-white/10 animate-fade-in"><div><h4 class="text-lg font-bold text-white">${req.name}</h4><p class="text-sm text-gray-400">Paket Değişikliği: <span class="text-gray-500 line-through">${req.current}</span> <span class="text-yellow-400 font-bold">-> ${req.target}</span></p></div><div class="space-x-2"><button onclick="handleApprove(${req.id})" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg transition-transform hover:scale-105">Onayla</button><button onclick="handleReject(${req.id})" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg transition-transform hover:scale-105">Reddet</button></div></div>`; });
+            } updateDashboardCounts();
+        }
+
+        // --- İŞLEMLER ---
+        function handleApprove(reqId) {
+            const request = requests.find(r => r.id === reqId);
+            if (request) {
+                const memberIndex = members.findIndex(m => m.id === request.memberId);
+                if (memberIndex !== -1) { members[memberIndex].package = request.target; }
+                requests = requests.filter(r => r.id !== reqId); renderRequests(); renderMembers(); showNotification("Talep Onaylandı", "Üyenin paketi güncellendi.");
+            }
+        }
+        function handleReject(reqId) { requests = requests.filter(r => r.id !== reqId); renderRequests(); showNotification("Talep Reddedildi", "İstek kaldırıldı.", "bg-red-600", "border-red-400"); }
+
+        function saveNewMember(event) {
+            event.preventDefault();
+            const newId = members.length > 0 ? members[members.length - 1].id + 1 : 1;
+            members.push({ id: newId, name: document.getElementById('newMemberName').value, surname: document.getElementById('newMemberSurname').value, email: document.getElementById('newMemberEmail').value, package: document.getElementById('newMemberPackage').value, duration: document.getElementById('newMemberDuration').value });
+            renderMembers(); closeAddMemberModal(); event.target.reset(); showNotification("Yeni Üye", "Kayıdı başarıyla oluşturuldu.");
+        }
+
+        function saveNewCoach(event) {
+            event.preventDefault();
+            const newId = coaches.length > 0 ? coaches[coaches.length - 1].id + 1 : 1;
+            coaches.push({ id: newId, name: document.getElementById('newCoachName').value, surname: document.getElementById('newCoachSurname').value, email: document.getElementById('newCoachEmail').value, bio: document.getElementById('newCoachBio').value, achievements: document.getElementById('newCoachAchieve').value });
+            renderCoaches(); closeAddCoachModal(); event.target.reset(); showNotification("Yeni Antrenör", "Kadroya eklendi.");
+        }
+
+        function askDelete(type, id) { deleteTargetType = type; deleteTargetId = id; document.getElementById('deleteConfirmModal').classList.remove('modal-hidden'); document.getElementById('deleteConfirmModal').classList.add('modal-visible'); }
+        function closeDeleteModal() { deleteTargetId = null; document.getElementById('deleteConfirmModal').classList.remove('modal-visible'); document.getElementById('deleteConfirmModal').classList.add('modal-hidden'); }
+        function performDelete() {
+            if (deleteTargetId !== null) {
+                if (deleteTargetType === 'member') { members = members.filter(m => m.id !== deleteTargetId); renderMembers(); }
+                else if (deleteTargetType === 'coach') { coaches = coaches.filter(c => c.id !== deleteTargetId); renderCoaches(); }
+                closeDeleteModal(); showNotification("Silindi", "Kayıt başarıyla silindi.", "bg-gray-600", "border-gray-400");
+            }
+        }
+
+        function viewCoachProfile(id) {
+            const coach = coaches.find(c => c.id === id);
+            if (coach) {
+                document.getElementById('coachProfileName').innerText = `${coach.name} ${coach.surname}`;
+                document.getElementById('coachProfileBio').innerText = coach.bio;
+                const achievementsHtml = coach.achievements.split('\n').map(ach => `<div class="flex items-center space-x-2"><svg class="w-4 h-4 text-yellow-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 7h-1A1.5 1.5 0 0 0 16 8.5v7a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 20 15.5v-7A1.5 1.5 0 0 0 18.5 7ZM5.5 7h-1A1.5 1.5 0 0 0 3 8.5v7A1.5 1.5 0 0 0 4.5 17h1A1.5 1.5 0 0 0 7 15.5v-7A1.5 1.5 0 0 0 5.5 7ZM8 11h8v2H8z"/></svg><p>${ach}</p></div>`).join('');
+                document.getElementById('coachProfileAchievements').innerHTML = achievementsHtml;
+                document.getElementById('coachProfileImage').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${coach.name}`;
+                document.getElementById('coachProfileModal').classList.remove('modal-hidden');
+                document.getElementById('coachProfileModal').classList.add('modal-visible');
+            }
+        }
+
+        function openMeasurementModal(id, name) { measureTargetId = id; document.getElementById('measureMemberName').innerText = name; document.getElementById('measurementModal').classList.remove('modal-hidden'); document.getElementById('measurementModal').classList.add('modal-visible'); }
+        function closeMeasurementModal() { document.getElementById('measurementModal').classList.remove('modal-visible'); document.getElementById('measurementModal').classList.add('modal-hidden'); }
+        function saveMeasurements(event) { event.preventDefault(); closeMeasurementModal(); event.target.reset(); showNotification("Ölçümler Kaydedildi", "Veriler güncellendi."); }
+
+        function openModal(modalId) { 
+            if(modalId === 'financeModal') renderFinance();
+            document.getElementById(modalId).classList.remove('modal-hidden'); 
+            document.getElementById(modalId).classList.add('modal-visible'); 
+        }
+        function closeModal(modalId) { document.getElementById(modalId).classList.remove('modal-visible'); document.getElementById(modalId).classList.add('modal-hidden'); }
+        function openAddMemberModal() { document.getElementById('addMemberModal').classList.remove('modal-hidden'); document.getElementById('addMemberModal').classList.add('modal-visible'); }
+        function closeAddMemberModal() { document.getElementById('addMemberModal').classList.remove('modal-visible'); document.getElementById('addMemberModal').classList.add('modal-hidden'); }
+        function openAddCoachModal() { document.getElementById('addCoachModal').classList.remove('modal-hidden'); document.getElementById('addCoachModal').classList.add('modal-visible'); }
+        function closeAddCoachModal() { document.getElementById('addCoachModal').classList.remove('modal-visible'); document.getElementById('addCoachModal').classList.add('modal-hidden'); }
+        function closeCoachProfileModal() { document.getElementById('coachProfileModal').classList.remove('modal-visible'); document.getElementById('coachProfileModal').classList.add('modal-hidden'); }
+
+        function showNotification(title, desc, colorClass = "bg-green-600", borderClass = "border-green-400") {
+            const notif = document.getElementById('notification');
+            document.getElementById('notifTitle').innerText = title; document.getElementById('notifDesc').innerText = desc;
+            notif.className = `fixed top-5 right-5 ${colorClass} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 border ${borderClass} z-[300] translate-x-0`;
+            setTimeout(() => { notif.classList.remove('translate-x-0'); notif.classList.add('translate-x-[150%]'); }, 3000);
+        }
+    </script>
+</body>
+</html>
