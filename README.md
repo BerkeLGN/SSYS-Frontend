@@ -8,7 +8,9 @@ Benim Katkılarım ve Sorumluluklarım:
 Projenin başarıyla tamamlanabilmesi için aşağıdaki sorumlulukları üstlendim:
 
 *Frontend Geliştirme: Kullanıcı dostu ve işlevsel bir arayüz tasarımı ile kullanıcı deneyimi (UI/UX) süreçlerini yönettim.
+
 *Veritabanı Mimarisi: İlişkisel veritabanı şemasının tasarımı ve sistem gereksinimlerine uygun SQL sorgularının oluşturulması süreçlerinde aktif rol aldım.
+
 *Teknik Sunum: Final aşamasında projenin teknik detaylarının anlatıldığı sunumda yer aldım.
 
 Kullanılan Teknolojiler:
